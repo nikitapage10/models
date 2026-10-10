@@ -12,6 +12,18 @@ Total size is about 240 MB.
 - **Cast:** shortlists for each C.E.O. character (`cast.json`). Preview each candidate in 3D and pick one.
 - **Library:** every model, with 3D previews and its animations.
 
+## Motion lab
+
+`lab/` is an animation workbench, also on GitHub Pages:
+- **Motion:** the app's own procedural motion for Rocky and Blasto, live. Every number has a slider, every layer has a switch, and there are mode buttons, a walk path and a timeline of each leg's or tentacle's rhythm. Copy your settings and notes back to Claude to make them the app's.
+  - `lab/motion/` is generated from the C.E.O. repo by `scripts/sync-lab.mjs`. Don't edit it here.
+- **Animator:** new clips for any rigged model.
+  - Pose bones with a gizmo and keyframe them on a timeline.
+  - Stack motion layers: wave (tentacle wiggle), swing, bob, shake.
+  - Drag IK handles.
+  - Play an existing clip underneath.
+  - Export a GLB with the new clip.
+
 ## Finding a model
 
 - **`catalog.json`:** one row per model. Fields:
