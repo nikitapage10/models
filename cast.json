@@ -540,6 +540,24 @@
       ]
     },
     {
+      "id": "heimerdinger",
+      "name": "Heimerdinger",
+      "room": "Archive",
+      "house": "Claudari",
+      "role": "Researcher",
+      "traits": "wise · fussy · kind · cautious",
+      "about": "A very small, very old professor who tests every piece of lore at his workbench before anyone may believe it. Lectures the young and brilliant on patience, then helps them anyway.",
+      "costume": "Heimerdinger (Arcane).",
+      "current": "custom/Heimerdinger",
+      "candidates": [
+        {
+          "id": "custom/Heimerdinger",
+          "fit": "walk",
+          "label": "Heimerdinger (yours, Meshy)"
+        }
+      ]
+    },
+    {
       "id": "kevin",
       "name": "Kevin",
       "room": "Break Room",
