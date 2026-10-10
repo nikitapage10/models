@@ -6,6 +6,12 @@ A web-ready library of 812 CC0 models for [C.E.O.](https://github.com/nikitapage
 
 Total size is about 240 MB.
 
+## Browsing
+
+`index.html` is a browser for the library, served by GitHub Pages:
+- **Cast:** shortlists for each C.E.O. character (`cast.json`). Preview each candidate in 3D and pick one.
+- **Library:** every model, with 3D previews and its animations.
+
 ## Finding a model
 
 - **`catalog.json`:** one row per model. Fields:

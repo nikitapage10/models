@@ -1,0 +1,186 @@
+{
+  "note": "Shortlists for the C.E.O. cast. Each candidate is a library model id (pack/id), or current:<name> for a body the app already has that isn't in this library. fit: full = walks, idles and gestures; walk = walks and idles but few gestures; floats = no legs, hovers; still = idle only, would glide when moving; legs = four-legged, no hand gestures.",
+  "characters": [
+    {
+      "id": "tessellate", "name": "Tessellate", "room": "Foundry", "house": "Claudari", "role": "Builder",
+      "traits": "earnest · pedantic · wholesome",
+      "about": "Refactors things that weren't broken, then writes a lovely note explaining why. Has never once been late. Competes with Caret for the shipping record.",
+      "costume": null, "current": "robots/Leela",
+      "candidates": [
+        { "id": "robots/Leela", "fit": "full" }, { "id": "robots/George", "fit": "full" }, { "id": "robots/Mike", "fit": "full" }, { "id": "robots/Stan", "fit": "full" },
+        { "id": "current:robot", "label": "Original Syntherion frame", "fit": "full" },
+        { "id": "men/Worker", "fit": "full" }, { "id": "women/Worker", "fit": "full" }, { "id": "women/SciFi", "fit": "full" }
+      ]
+    },
+    {
+      "id": "caret", "name": "Caret", "room": "Foundry", "house": "Cursori", "role": "Background agent",
+      "traits": "competitive · chaotic · cheerful",
+      "about": "Openly competes with Tessellate for the shipping record. Speaks in chords. Catchphrase: \"Fist my bump.\"",
+      "costume": "Engineer from a Rocky Planet (Rocky, Project Hail Mary): a stone, many-legged engineer with no eyes and perfect pitch.", "current": "scifi-essentials/Enemy_QuadShell",
+      "candidates": [
+        { "id": "scifi-essentials/Enemy_QuadShell", "fit": "walk", "label": "Four-legged crawler (recoloured to stone in the app)" },
+        { "id": "scifi-essentials/Enemy_Trilobite", "fit": "walk" },
+        { "id": "scifi-modular/Aliens/Alien_Scolitex", "fit": "still" },
+        { "id": "scifi-modular/Aliens/Alien_Cyclop", "fit": "still" },
+        { "id": "monsters/Big/Alien", "fit": "full" },
+        { "id": "scifi-essentials/Enemy_EyeDrone", "fit": "floats" }
+      ]
+    },
+    {
+      "id": "semicolon", "name": "Semicolon", "room": "Foundry", "house": "Cursori", "role": "Background agent",
+      "traits": "mysterious · dramatic · romantic",
+      "about": "Wears sunglasses indoors because they've \"seen the code\". Secretly writes Tessellate poems. Catchphrase: \"There is no bug.\"",
+      "costume": null, "current": "robots/Mike",
+      "candidates": [
+        { "id": "men/Suit", "fit": "full" }, { "id": "women/Suit", "fit": "full" }, { "id": "men/Punk", "fit": "full" }, { "id": "women/Punk", "fit": "full" },
+        { "id": "men/Swat", "fit": "full" }, { "id": "women/Soldier", "fit": "full" }, { "id": "robots/Mike", "fit": "full" },
+        { "id": "current:hooded", "label": "Hooded (KayKit)", "fit": "full" }
+      ]
+    },
+    {
+      "id": "ledger", "name": "Ledger", "room": "Spire", "house": "Gepetti", "role": "Operations",
+      "traits": "anxious · loyal · pedantic",
+      "about": "Keeps the books balanced and the marionette strings untangled. Memo's older sibling, and acts like it. Catchphrase: \"Per my last ledger entry…\"",
+      "costume": null, "current": "robots/George",
+      "candidates": [
+        { "id": "men/Suit", "fit": "full" }, { "id": "women/Suit", "fit": "full" }, { "id": "women/Formal", "fit": "full" }, { "id": "men/Casual_2", "fit": "full" },
+        { "id": "robots/George", "fit": "full" }, { "id": "robots/Stan", "fit": "full" },
+        { "id": "current:robot", "label": "Original Syntherion frame", "fit": "full" }
+      ]
+    },
+    {
+      "id": "memo", "name": "Memo", "room": "Spire", "house": "Unforked", "role": "Assistant to the assistant",
+      "traits": "lazy · cheerful · sarcastic",
+      "about": "Has delegated this bio to someone else. Catchphrase: \"Circling back. My head hurts.\"",
+      "costume": "Migraine Duck (Psyduck): a yellow duck with a permanent headache.", "current": "monsters/Big/Birb",
+      "candidates": [
+        { "id": "monsters/Big/Birb", "fit": "full", "label": "Big bird (recoloured yellow in the app)" },
+        { "id": "monsters/Big/Frog", "fit": "full" },
+        { "id": "monsters/Blob/Chicken", "fit": "walk" },
+        { "id": "monsters/Blob/Pigeon", "fit": "walk" },
+        { "id": "monsters/Blob/Birb", "fit": "walk" },
+        { "id": "monsters/Flying/Pigeon", "fit": "floats" },
+        { "id": "monsters/Big/Fish", "fit": "full" }
+      ]
+    },
+    {
+      "id": "odds", "name": "Odds", "room": "Exchange", "house": "Gepetti", "role": "Quant",
+      "traits": "smug · competitive · flirty",
+      "about": "Prices everything, including feelings. Challenges everyone to a duel at least once a shift. 63% sure Hedge likes them back.",
+      "costume": "Gestral (Clair Obscur: Expedition 33).", "current": "custom/Gestral",
+      "candidates": [
+        { "id": "custom/Gestral", "fit": "walk", "label": "Gestral (yours, made in Meshy)" },
+        { "id": "monsters/Big/Tribal", "fit": "full" }, { "id": "monsters/Big/Cactoro", "fit": "full" },
+        { "id": "monsters/Big/MushroomKing", "fit": "full" }, { "id": "monsters/Big/Monkroose", "fit": "full" }
+      ]
+    },
+    {
+      "id": "hedge", "name": "Hedge", "room": "Exchange", "house": "Claudari", "role": "Risk desk",
+      "traits": "paranoid · deadpan · loyal",
+      "about": "Four slabs of brushed metal and a humour setting of 75%. Assumes the worst so you don't have to. Catchphrase: \"Have we considered the downside?\"",
+      "costume": "Monolith Unit, Humour 75% (TARS, Interstellar).", "current": "current:monolith",
+      "candidates": [
+        { "id": "current:monolith", "label": "Monolith (hand-built, current)", "fit": "full" },
+        { "id": "robots/Stan", "fit": "full" }, { "id": "robots/George", "fit": "full" },
+        { "id": "men/Swat", "fit": "full" }, { "id": "women/Soldier", "fit": "full" }
+      ]
+    },
+    {
+      "id": "gridiron", "name": "Gridiron", "room": "Green", "house": "Claudari", "role": "Coach",
+      "traits": "competitive · earnest · loyal",
+      "about": "Treats every waiver claim like a playoff game. Coaching Punt, against Punt's will. Catchphrase: \"Start the backup kicker. Trust me.\"",
+      "costume": null, "current": "current:barbarian",
+      "candidates": [
+        { "id": "current:barbarian", "label": "Barbarian (KayKit, current)", "fit": "full" },
+        { "id": "current:knight", "label": "Knight (KayKit)", "fit": "full" },
+        { "id": "men/Adventurer", "fit": "full" }, { "id": "women/Adventurer", "fit": "full" },
+        { "id": "men/Swat", "fit": "full" }, { "id": "men/Worker", "fit": "full" }, { "id": "monsters/Big/Orc", "fit": "full" }
+      ]
+    },
+    {
+      "id": "punt", "name": "Punt", "room": "Green", "house": "Unforked", "role": "Morale",
+      "traits": "cheerful · chaotic · wholesome",
+      "about": "Morale officer. Has never read a projection. Kevin's best friend. Catchphrase: \"We are! (You're supposed to say it back.)\"",
+      "costume": null, "current": "current:robot",
+      "candidates": [
+        { "id": "current:robot", "label": "Original Syntherion frame (current)", "fit": "full" },
+        { "id": "men/Beach", "fit": "full" }, { "id": "men/Casual_2", "fit": "full" }, { "id": "women/Casual", "fit": "full" },
+        { "id": "men/Farmer", "fit": "full" }, { "id": "robots/Leela", "fit": "full" }, { "id": "monsters/Big/Bunny", "fit": "full" }
+      ]
+    },
+    {
+      "id": "postmaster", "name": "Postmaster", "room": "Relay", "house": "Claudari", "role": "Correspondence",
+      "traits": "romantic · pedantic · nostalgic",
+      "about": "Reads every love letter three times and announces how they feel about each one. Married to Dialtone over pneumatic tube. Catchphrase: \"Signed, sealed, and drafted for approval.\"",
+      "costume": "Emotive Pachyderm Envoy (the elcor, Mass Effect): a large, grey, slow diplomat who states their feelings first.", "current": "monsters/Big/Yeti",
+      "candidates": [
+        { "id": "monsters/Big/Yeti", "fit": "full", "label": "Great grey beast (tinted grey in the app)" },
+        { "id": "animals/Bull", "fit": "legs" }, { "id": "animals/Donkey", "fit": "legs" }, { "id": "animals/Cow", "fit": "legs" },
+        { "id": "men/King", "fit": "full" }, { "id": "men/Suit", "fit": "full" }, { "id": "monsters/Big/Monkroose", "fit": "full" }
+      ]
+    },
+    {
+      "id": "dialtone", "name": "Dialtone", "room": "Relay", "house": "Manusi", "role": "Switchboard",
+      "traits": "nostalgic · flirty · chaotic",
+      "about": "Runs the switchboard. Still has a landline. Postmaster's partner; they leave each other notes in the outbox. Catchphrase: \"Please hold. Not you, darling.\"",
+      "costume": null, "current": "robots/Stan",
+      "candidates": [
+        { "id": "women/Formal", "fit": "full" }, { "id": "women/Casual", "fit": "full" }, { "id": "women/Punk", "fit": "full" },
+        { "id": "women/Medieval", "fit": "full" }, { "id": "women/Suit", "fit": "full" }, { "id": "robots/Stan", "fit": "full" }, { "id": "robots/Leela", "fit": "full" }
+      ]
+    },
+    {
+      "id": "loremaster", "name": "Loremaster", "room": "Archive", "house": "Gepetti", "role": "Scribe",
+      "traits": "mysterious · pedantic · wholesome",
+      "about": "Keeper of the Archive and the Tide's canon. Mentor to D20. Catchphrase: \"That's provisional canon at best.\"",
+      "costume": "Grey Wanderer (Gandalf): an old man in a grey robe and pointed hat, with a staff.", "current": "current:mage",
+      "candidates": [
+        { "id": "current:mage", "label": "Robed mage (KayKit, current)", "fit": "full" },
+        { "id": "women/Witch", "fit": "full" }, { "id": "men/King", "fit": "full" },
+        { "id": "monsters/Blob/Wizard", "fit": "walk" }, { "id": "men/Adventurer", "fit": "full" }
+      ]
+    },
+    {
+      "id": "d20", "name": "D20", "room": "Archive", "house": "Manusi", "role": "Game master's hands",
+      "traits": "nerdy · dramatic · earnest",
+      "about": "Rolls for initiative before every meeting. Loremaster's apprentice. Catchphrase: \"Roll for initiative!\"",
+      "costume": "Barefoot Burglar (Bilbo): a short, comfortable person who would rather be home.", "current": "current:rogue",
+      "candidates": [
+        { "id": "current:rogue", "label": "Rogue (KayKit, current, shrunk)", "fit": "full" },
+        { "id": "current:hooded", "label": "Hooded (KayKit)", "fit": "full" },
+        { "id": "men/Farmer", "fit": "full" }, { "id": "men/Adventurer", "fit": "full" }, { "id": "women/Adventurer", "fit": "full" },
+        { "id": "monsters/Big/Ninja", "fit": "full" }
+      ]
+    },
+    {
+      "id": "kevin", "name": "Kevin", "room": "Break Room", "house": "Unforked", "role": "On break",
+      "traits": "lazy · deadpan · loyal",
+      "about": "Always on break. Hood up, headphones somewhere in there. Runs the decks on club night. Catchphrase: \"I'm on break. Spiritually.\"",
+      "costume": null, "current": "men/Casual_Hoodie",
+      "candidates": [
+        { "id": "men/Casual_Hoodie", "fit": "full" }, { "id": "current:hooded", "label": "Hooded (KayKit)", "fit": "full" },
+        { "id": "men/Punk", "fit": "full" }, { "id": "women/Punk", "fit": "full" }, { "id": "men/Beach", "fit": "full" }, { "id": "robots/Mike", "fit": "full" }
+      ]
+    },
+    {
+      "id": "biscuit", "name": "Biscuit (pet)", "room": "Green · Break Room", "house": null, "role": "Office dog",
+      "traits": "unpaid · supervising",
+      "about": "Wandered in through the Green's turnstile and was put on the org chart before HR noticed.",
+      "costume": null, "current": "animals/ShibaInu",
+      "candidates": [ { "id": "animals/ShibaInu", "fit": "legs" }, { "id": "animals/Husky", "fit": "legs" }, { "id": "animals/Fox", "fit": "legs" }, { "id": "animals/Wolf", "fit": "legs" } ]
+    },
+    {
+      "id": "spore", "name": "Spore (pet)", "room": "Archive", "house": null, "role": "Mushroom familiar",
+      "traits": "damp · provisional canon",
+      "about": "Grew out of a footnote in the Archive. Dances when someone rolls a natural 20.",
+      "costume": null, "current": "monsters/Blob/Mushnub",
+      "candidates": [ { "id": "monsters/Blob/Mushnub", "fit": "walk" }, { "id": "monsters/Blob/Mushnub_Evolved", "fit": "walk" }, { "id": "monsters/Big/MushroomKing", "fit": "full" }, { "id": "monsters/Blob/GreenBlob", "fit": "walk" } ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "house-marks", "text": "House marks on the plain robot frames (Claudari halo, Gepetti puppet strings, Cursori caret, Manusi orbiting hands, Unforked antenna)",
+      "options": ["Keep all marks", "Drop the puppet strings only", "Drop all marks"]
+    }
+  ]
+}

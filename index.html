@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>C.E.O. Model Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script>
+  // The library's models are meshopt-compressed; model-viewer loads this decoder on demand.
+  self.ModelViewerElement = { meshoptDecoderLocation: "https://cdn.jsdelivr.net/npm/meshoptimizer@0.20.0/meshopt_decoder.js" };
+</script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<link rel="icon" href="data:,">
+<style>
+/* Layout: a two-pane casting room. Cards scroll on the left; the 3D stage stays pinned on the right (a bottom sheet on phones). */
+:root {
+  --void: #0b0d12;
+  --panel: #12151c;
+  --raise: #1a1e27;
+  --line: #2a303c;
+  --ink: #e9e6df;
+  --dim: #9097a3;
+  --brass: #c9a25c;
+  --pick: #8fd3ff;
+  --warn: #ffb36b;
+  --display: "Cormorant Garamond", Georgia, serif;
+  --body: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--void); color: var(--ink); font: 14px/1.5 var(--body); }
+a { color: var(--pick); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--pick); outline-offset: 2px; }
+
+header {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px;
+  padding: 14px 20px; background: color-mix(in srgb, var(--void) 88%, transparent);
+  backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+}
+.mark { font: 600 22px/1 var(--display); letter-spacing: .14em; }
+.mark small { font: 500 11px var(--mono); letter-spacing: .18em; color: var(--dim); margin-left: 10px; text-transform: uppercase; }
+nav { display: flex; gap: 4px; }
+nav button {
+  background: none; border: 1px solid transparent; border-radius: 999px; padding: 6px 14px; cursor: pointer;
+  font: 500 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim);
+}
+nav button[aria-selected="true"] { color: var(--ink); border-color: var(--line); background: var(--raise); }
+.tally { margin-left: auto; display: flex; align-items: center; gap: 12px; font: 12px var(--mono); color: var(--dim); }
+.btn {
+  border: 1px solid var(--brass); background: none; color: var(--brass); border-radius: 6px;
+  padding: 7px 14px; font: 500 12px var(--mono); letter-spacing: .08em; cursor: pointer;
+}
+.btn:hover { background: color-mix(in srgb, var(--brass) 14%, transparent); }
+
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 40%); }
+.list { padding: 20px; display: grid; gap: 18px; align-content: start; min-width: 0; }
+
+.stage {
+  position: sticky; top: 61px; height: calc(100vh - 61px);
+  border-left: 1px solid var(--line); background: radial-gradient(120% 80% at 50% 30%, #1b2030, var(--void));
+  display: grid; grid-template-rows: minmax(0, 1fr) auto;
+}
+model-viewer { width: 100%; height: 100%; --poster-color: transparent; background: none; }
+.stage-empty, .stage-still { display: grid; place-items: center; text-align: center; color: var(--dim); padding: 24px; }
+.stage-still img { width: min(70%, 320px); border-radius: 8px; }
+.stage-bar { padding: 14px 18px; border-top: 1px solid var(--line); background: var(--panel); display: grid; gap: 10px; }
+.stage-bar h3 { margin: 0; font: 600 20px/1.2 var(--display); }
+.stage-bar .meta { font: 12px var(--mono); color: var(--dim); }
+.clips { display: flex; flex-wrap: wrap; gap: 6px; }
+.clip {
+  border: 1px solid var(--line); background: var(--raise); border-radius: 999px; padding: 3px 10px;
+  font: 12px var(--mono); cursor: pointer; color: var(--dim);
+}
+.clip[aria-pressed="true"] { color: var(--void); background: var(--pick); border-color: var(--pick); }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 12px; }
+.card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.card-head h2 { margin: 0; font: 600 28px/1 var(--display); letter-spacing: .02em; }
+.where { font: 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+.traits { font: italic 500 16px var(--display); color: var(--brass); }
+.about { margin: 0; max-width: 68ch; color: #cfcbc2; }
+.costume { margin: 0; font-size: 13px; color: var(--dim); max-width: 68ch; }
+.costume b { color: var(--ink); font-weight: 500; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+.tile {
+  position: relative; display: grid; grid-template-rows: auto auto; text-align: left; gap: 6px;
+  background: var(--raise); border: 1px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer;
+}
+.tile img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: #22262f; }
+.tile .name { font-size: 12.5px; font-weight: 500; line-height: 1.3; }
+.tile .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.badge { font: 10.5px var(--mono); letter-spacing: .04em; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); color: var(--dim); }
+.badge.now { color: var(--brass); border-color: color-mix(in srgb, var(--brass) 50%, transparent); }
+.badge.fit-still, .badge.fit-floats { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.tile.viewing { border-color: var(--dim); }
+.tile.picked { border-color: var(--pick); box-shadow: 0 0 0 1px var(--pick) inset; }
+.tile.picked::after {
+  content: "Picked"; position: absolute; top: 12px; left: 12px; font: 600 11px var(--mono); letter-spacing: .1em;
+  background: var(--pick); color: var(--void); padding: 2px 7px; border-radius: 4px;
+}
+.choose { justify-self: start; }
+
+.question { display: flex; flex-wrap: wrap; gap: 8px; }
+.question label { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toolbar input {
+  flex: 1 1 220px; min-width: 0; background: var(--raise); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 12px; color: var(--ink); font: inherit;
+}
+.chip { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 4px 11px; font: 12px var(--mono); cursor: pointer; color: var(--dim); }
+.chip[aria-pressed="true"] { color: var(--ink); background: var(--raise); border-color: var(--dim); }
+.count { font: 12px var(--mono); color: var(--dim); }
+
+.toast { position: fixed; bottom: 18px; left: 50%; translate: -50% 0; background: var(--ink); color: var(--void); padding: 8px 14px; border-radius: 8px; font: 500 13px var(--body); }
+textarea.copyout { width: 100%; min-height: 160px; background: var(--raise); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: 12px var(--mono); }
+
+@media (max-width: 860px) {
+  main { grid-template-columns: minmax(0, 1fr); }
+  .stage { position: sticky; top: 0; height: 58vh; order: -1; border-left: 0; border-bottom: 1px solid var(--line); z-index: 4; }
+  .stage-bar { padding: 10px 14px; gap: 8px; }
+  .stage-bar h3 { font-size: 17px; }
+  .clips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .clip { flex: none; }
+  header { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="mark">C.E.O.<small>Model library</small></div>
+  <nav role="tablist">
+    <button role="tab" id="tab-cast" aria-selected="true">Cast</button>
+    <button role="tab" id="tab-library" aria-selected="false">Library</button>
+  </nav>
+  <div class="tally"><span id="tally">0 picked</span><button class="btn" id="copy">Copy my picks</button></div>
+</header>
+<main>
+  <section class="list" id="list" aria-live="polite"></section>
+  <aside class="stage" id="stage">
+    <div class="stage-empty" id="stage-view">Select a model to see it in 3D. Drag to turn it; the buttons below play its animations.</div>
+    <div class="stage-bar" id="stage-bar" hidden></div>
+  </aside>
+</main>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const h = (tag, attrs = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k.startsWith("on")) el.addEventListener(k.slice(2), v); else if (k === "text") el.textContent = v; else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null) el.append(k);
+  return el;
+};
+const FIT = { full: "walks · gestures", walk: "walks · few gestures", floats: "hovers, no legs", still: "idle only, glides", legs: "four legs" };
+const PACK_NAMES = {};
+let catalog = [], byId = new Map(), cast = null, tab = "cast", viewing = null;
+let picks = {};
+try { picks = JSON.parse(localStorage.getItem("ceo-picks") || "{}"); } catch { picks = {}; }
+const savePicks = () => { try { localStorage.setItem("ceo-picks", JSON.stringify(picks)); } catch {} updateTally(); };
+
+function modelInfo(id, label) {
+  if (id.startsWith("current:")) {
+    const n = id.slice(8);
+    return { id, label: label || n, thumb: n === "monolith" ? null : `thumbs/current/${n}.webp`, glb: null, anims: [], pack: "current" };
+  }
+  const m = byId.get(id);
+  if (!m) return { id, label: label || id, thumb: null, glb: null, anims: [] };
+  return { id, label: label || prettify(m.id), thumb: m.thumb, glb: m.glb, anims: m.anims, tris: m.tris, pack: m.pack };
+}
+const prettify = (id) => id.split("/").pop().replace(/_/g, " ");
+const packLabel = (p) => ({ men: "man", women: "woman" })[p];
+
+function tile(info, { fit, current, pickedFor }) {
+  const isPicked = pickedFor && picks[pickedFor] === info.id;
+  const title = (packLabel(info.pack) ? `${info.label} (${packLabel(info.pack)})` : info.label);
+  return h("button", {
+    class: `tile${isPicked ? " picked" : ""}${viewing === info.id ? " viewing" : ""}`, type: "button",
+    "aria-label": `Preview ${title}`, onclick: () => view(info, pickedFor),
+  },
+    info.thumb ? h("img", { src: info.thumb, alt: "", loading: "lazy" }) : h("img", { alt: "", src: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#22262f"/><g fill="#9aa3ad"><rect x="2.6" y="2" width="1.1" height="6.4"/><rect x="3.9" y="2" width="1.1" height="6.4"/><rect x="5.2" y="2" width="1.1" height="6.4"/><rect x="6.5" y="2" width="1.1" height="6.4"/></g></svg>') }),
+    h("span", { class: "name", text: title }),
+    h("span", { class: "badges" },
+      current ? h("span", { class: "badge now", text: "in the app now" }) : null,
+      fit ? h("span", { class: `badge fit-${fit}`, text: FIT[fit] }) : null,
+    ),
+  );
+}
+
+function view(info, pickedFor) {
+  viewing = info.id;
+  const stageView = $("#stage-view");
+  const bar = $("#stage-bar");
+  let viewer = null;
+  if (info.glb) {
+    const clip = info.anims.find((a) => /^(Idle|Walk|Walking|Flying_Idle|Alien_Idle)$/.test(a)) || info.anims[0];
+    viewer = h("model-viewer", { src: info.glb, alt: info.label, "camera-controls": true, autoplay: true, "animation-name": clip || null, "shadow-intensity": "1", exposure: "1.1", "environment-image": "neutral", "camera-orbit": "30deg 75deg auto", "touch-action": "pan-y" });
+    stageView.replaceWith(h("div", { id: "stage-view", style: "min-height:0" }, viewer));
+  } else {
+    const msg = info.id === "current:monolith" ? "The Monolith is hand-built in code, so it has no model file to preview here." : "This body is already in the app. Its model isn't in this library, so there's no 3D preview here.";
+    stageView.replaceWith(h("div", { id: "stage-view", class: "stage-still" }, h("div", {}, info.thumb ? h("img", { src: info.thumb, alt: info.label }) : null, h("p", { text: msg }))));
+  }
+  const clips = viewer && info.anims.length ? h("div", { class: "clips", role: "group", "aria-label": "Animations" },
+    info.anims.map((a) => h("button", { class: "clip", type: "button", "aria-pressed": String(viewer.getAttribute("animation-name") === a), text: a.replace(/_/g, " "),
+      onclick: (e) => { viewer.setAttribute("animation-name", a); viewer.play?.(); bar.querySelectorAll(".clip").forEach((b) => b.setAttribute("aria-pressed", String(b === e.currentTarget))); } }))) : null;
+  const choose = pickedFor ? h("button", { class: "btn choose", type: "button", text: picks[pickedFor] === info.id ? "Picked for " + nameOf(pickedFor) : "Pick for " + nameOf(pickedFor),
+    onclick: () => { picks[pickedFor] = info.id; savePicks(); toast(`${info.label} picked for ${nameOf(pickedFor)}`); render(); view(info, pickedFor); } }) : null;
+  bar.replaceChildren(
+    h("h3", { text: info.label }),
+    h("div", { class: "meta", text: [info.id.startsWith("current:") ? "already in the app" : info.id, info.tris ? `${info.tris.toLocaleString()} triangles` : null, info.anims.length ? `${info.anims.length} animations` : null].filter(Boolean).join(" · ") }),
+    clips, choose,
+  );
+  bar.hidden = false;
+  document.querySelectorAll(".tile").forEach((t) => t.classList.remove("viewing"));
+}
+const nameOf = (cid) => cast.characters.find((c) => c.id === cid)?.name.replace(/ \(pet\)/, "") ?? cid;
+
+function renderCast() {
+  const list = $("#list");
+  list.replaceChildren(
+    h("p", { class: "about", text: "For each character, tap a model to see it in 3D, then press “Pick”. Your picks stay in this browser. When you're done, press “Copy my picks” and paste them to Claude." }),
+    ...cast.characters.map((c) => h("article", { class: "card", id: `c-${c.id}` },
+      h("div", { class: "card-head" }, h("h2", { text: c.name }), h("span", { class: "where", text: [c.room, c.house && `House ${c.house}`, c.role].filter(Boolean).join(" · ") })),
+      h("div", { class: "traits", text: c.traits }),
+      h("p", { class: "about", text: c.about }),
+      c.costume ? h("p", { class: "costume" }, h("b", { text: "Costume: " }), c.costume) : null,
+      h("div", { class: "tiles" }, c.candidates.map((k) => tile(modelInfo(k.id, k.label), { fit: k.fit, current: k.id === c.current, pickedFor: c.id }))),
+    )),
+    ...cast.questions.map((q) => h("article", { class: "card" },
+      h("div", { class: "card-head" }, h("h2", { text: "One question" })),
+      h("p", { class: "about", text: q.text }),
+      h("div", { class: "question", role: "radiogroup" }, q.options.map((o, i) => h("label", {},
+        h("input", { type: "radio", name: q.id, id: `${q.id}-${i}`, value: o, checked: picks["q:" + q.id] === o, onchange: () => { picks["q:" + q.id] = o; savePicks(); } }), o))),
+    )),
+  );
+}
+
+let packFilter = "all", search = "";
+function renderLibrary() {
+  const list = $("#list");
+  const packs = ["all", ...new Set(catalog.map((m) => m.pack))];
+  const shown = catalog.filter((m) => (packFilter === "all" || m.pack === packFilter) && (!search || (m.pack + "/" + m.id).toLowerCase().includes(search)));
+  const grid = h("div", { class: "tiles" }, shown.slice(0, 400).map((m) => tile(modelInfo(m.pack + "/" + m.id), {})));
+  list.replaceChildren(
+    h("div", { class: "toolbar" },
+      h("input", { id: "search", type: "search", placeholder: "Search models (desk, tree, robot…)", value: search, oninput: (e) => { search = e.target.value.toLowerCase(); renderLibrary(); $("#search").focus(); } }),
+      h("span", { class: "count", text: `${shown.length} of ${catalog.length}${shown.length > 400 ? " · showing 400" : ""}` }),
+    ),
+    h("div", { class: "toolbar" }, packs.map((p) => h("button", { class: "chip", type: "button", "aria-pressed": String(p === packFilter), text: p === "all" ? "All packs" : (PACK_NAMES[p] || p), onclick: () => { packFilter = p; renderLibrary(); } }))),
+    grid,
+  );
+}
+const render = () => (tab === "cast" ? renderCast() : renderLibrary());
+
+function updateTally() {
+  const n = cast ? cast.characters.filter((c) => picks[c.id]).length : 0;
+  $("#tally").textContent = cast ? `${n} of ${cast.characters.length} picked` : "";
+}
+function summary() {
+  const lines = ["My C.E.O. cast picks:"];
+  for (const c of cast.characters) lines.push(`- ${c.name}: ${picks[c.id] ? modelInfo(picks[c.id]).label + " (" + picks[c.id] + ")" : "no pick (keep current)"}`);
+  for (const q of cast.questions) lines.push(`- ${q.text.split(" (")[0]}: ${picks["q:" + q.id] || "no answer"}`);
+  return lines.join("\n");
+}
+function toast(text) {
+  const t = h("div", { class: "toast", role: "status", text });
+  document.body.append(t); setTimeout(() => t.remove(), 2200);
+}
+$("#copy").addEventListener("click", async () => {
+  const text = summary();
+  try { await navigator.clipboard.writeText(text); toast("Copied. Paste it to Claude."); }
+  catch {
+    const ta = h("textarea", { class: "copyout", readonly: true }); ta.value = text;
+    $("#list").prepend(h("article", { class: "card" }, h("p", { class: "about", text: "Copy this and paste it to Claude:" }), ta));
+    ta.select();
+  }
+});
+for (const [id, name] of [["tab-cast", "cast"], ["tab-library", "library"]]) $("#" + id).addEventListener("click", () => {
+  tab = name; document.querySelectorAll("nav button").forEach((b) => b.setAttribute("aria-selected", String(b.id === id))); render(); window.scrollTo(0, 0);
+});
+
+Promise.all([fetch("catalog.json").then((r) => r.json()), fetch("cast.json").then((r) => r.json())]).then(([cat, c]) => {
+  catalog = cat.models; byId = new Map(catalog.map((m) => [m.pack + "/" + m.id, m]));
+  Object.entries(cat.packs).forEach(([k, v]) => (PACK_NAMES[k] = v.name));
+  cast = c; render(); updateTally();
+}).catch(() => {
+  $("#list").replaceChildren(h("p", { class: "about", text: "Couldn't load catalog.json. Open this page through GitHub Pages (or any web server); it can't load files when opened straight from disk." }));
+});
+</script>
+</body>
+</html>
