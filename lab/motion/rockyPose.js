@@ -28,30 +28,36 @@ export const ROCKY_GAIT = {
         breathe: true,
     },
     /** How far a foot travels per step. */
-    stride: 0.5,
+    stride: 0.63,
     /** Share of a cycle a foot spends on the floor: more than half, so the body glides on most of its feet. */
-    duty: 0.62,
+    duty: 0.67,
     /** Peak height of a step. */
-    lift: 0.12,
+    lift: 0.29,
     /** Shortest and longest a step may take: quick and light. */
     minStep: 0.1,
     maxStep: 0.22,
     /** Spider stance: feet planted this much further out than they hang at rest, and the body slung this low
      * between them, so the knees arch up above the carapace. `crouch` while scuttling, `stance` otherwise. */
-    reach: 0.24,
-    crouch: 0.26,
-    stance: 0.14,
+    reach: 0.12,
+    crouch: 0.11,
+    stance: 0.13,
     /** When each leg steps in the scuttle, as a fraction of the cycle: a wave round the body, off the beat. */
     scuttleOrder: [0, 0.38, 0.81, 0.17, 0.59],
     /** Body bob while walking (twice a cycle; small, so it glides), lean into travel per unit speed, and the most it leans. */
-    bob: 0.015,
-    lean: 0.03,
+    bob: 0.1,
+    lean: 0.15,
     maxLean: 0.1,
     /** Feet planted out from the body by this much more when settling to sleep, and how low it settles. */
-    splay: 0.3,
-    settle: 0.16,
+    splay: 0.34,
+    settle: 0.36,
     /** A planted foot this far from where it belongs takes a corrective step when standing still. */
-    restep: 0.1,
+    restep: 0.14,
+    /** Share of a leg's reach (across the floor, from its hip) a planted foot may drift to before it must step, and
+     * the share it lands within. Keeps the trailing legs from being dragged straight. */
+    maxReach: 0.92,
+    landReach: 0.8,
+    /** While walking, a foot lands no further out to the side of its hip than this share of the leg's reach. */
+    sideReach: 0.55,
     /** Where the front pair hold their hands for each job, in the body's frame [x (each side), y, z]. */
     arms: {
         idle: [0.3, 0.5, 0.42],
@@ -162,6 +168,11 @@ export function poseRocky(ground, body, rig, mode, t, dt, phase) {
         // Where this foot belongs now: out wide of its hip, wider still if settling.
         homeW.copy(leg.home).addScaledVector(leg.out, G.reach + G.splay * rig.sink);
         ground.localToWorld(homeW);
+        // How far across the floor this leg can reach from its hip at foot height.
+        leg.bones[0].getWorldPosition(hip);
+        const length = leg.lengths.reduce((a, b) => a + b, 0);
+        const span = Math.sqrt(Math.max(0, length * length - (hip.y - homeW.y) ** 2));
+        const across = (p) => Math.hypot(p.x - hip.x, p.z - hip.z);
         if (leg.swing) {
             const s = leg.swing;
             s.u = Math.min(1, s.u + dt / s.time);
@@ -176,7 +187,8 @@ export function poseRocky(ground, body, rig, mode, t, dt, phase) {
             const c = rig.clock + order;
             const due = G.layers.step && moving && c - Math.floor(c) < 1 - G.duty && Math.floor(c) !== leg.stepped;
             const strayed = leg.foot.distanceTo(homeW) > (moving ? G.stride * 1.1 : G.restep);
-            if (due || (G.layers.step && strayed && (moving || !swinging))) {
+            const overreached = across(leg.foot) > span * G.maxReach;
+            if (due || (G.layers.step && (overreached || (strayed && (moving || !swinging))))) {
                 leg.stepped = Math.floor(c);
                 // Land ahead of home by half the ground covered while planted, so the foot passes under the hip mid-stance.
                 const ahead = v.copy(rig.velocity).multiplyScalar(stepTime + (G.duty * cycle) / Math.max(speed, 0.01) / 2);
@@ -184,7 +196,32 @@ export function poseRocky(ground, body, rig, mode, t, dt, phase) {
                     ahead.set(0, 0, 0);
                 else if (ahead.length() > G.stride * 0.6)
                     ahead.setLength(G.stride * 0.6);
-                leg.swing = { from: leg.foot.clone(), to: homeW.clone().add(ahead), u: 0, time: moving ? stepTime : 0.22 };
+                const to = homeW.clone().add(ahead);
+                // A foot that rests behind its hip (the back legs) lands level with the hip instead, so its stride spans
+                // the reach in front of and behind it rather than starting at the back edge.
+                if (moving) {
+                    const dir = v.copy(rig.velocity).setY(0).normalize();
+                    const behind = -((to.x - ahead.x - hip.x) * dir.x + (to.z - ahead.z - hip.z) * dir.z);
+                    if (behind > 0)
+                        to.addScaledVector(dir, behind);
+                    // And a foot planted far out to the side comes in a little, leaving it room to stride.
+                    const sideX = -dir.z;
+                    const sideZ = dir.x;
+                    const lateral = (to.x - hip.x) * sideX + (to.z - hip.z) * sideZ;
+                    const most = span * G.sideReach;
+                    if (Math.abs(lateral) > most) {
+                        const d = lateral - Math.sign(lateral) * most;
+                        to.x -= sideX * d;
+                        to.z -= sideZ * d;
+                    }
+                }
+                // Land where the leg can still reach once the body has carried on through the step.
+                const later = hip.clone().addScaledVector(rig.velocity, moving ? stepTime : 0);
+                const off = v.set(to.x - later.x, 0, to.z - later.z);
+                const most = span * G.landReach;
+                if (off.length() > most)
+                    to.set(later.x, to.y, later.z).add(off.setLength(most));
+                leg.swing = { from: leg.foot.clone(), to, u: 0, time: moving ? stepTime : 0.22 };
             }
         }
     });

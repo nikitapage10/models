@@ -156,3 +156,4 @@ resize();
 await open(location.hash === "#animator" ? "animator" : "motion");
 frame();
 window.lab = lab;
+lab.active = () => active;

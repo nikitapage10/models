@@ -45,6 +45,7 @@ const CHARACTERS = {
       const rig = rigRocky(ground, legsOf(model));
       return {
         pose: (mode, t, dt) => poseRocky(ground, body, rig, mode, t, dt, 0),
+        state: rig,
         channels: () => rig.legs.map((l) => (l.swing ? l.foot.y - ground.getWorldPosition(new THREE.Vector3()).y : 0)),
         labels: () => rig.legs.map((l, i) => `Leg ${i + 1}${l.front ? " (arm)" : ""}`),
         range: [0, 0.25],
