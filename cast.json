@@ -56,8 +56,13 @@
       "traits": "competitive · chaotic · cheerful",
       "about": "Openly competes with Tessellate for the shipping record. Speaks in chords. Catchphrase: \"Fist my bump.\"",
       "costume": "Engineer from a Rocky Planet (Rocky, Project Hail Mary): a stone, many-legged engineer with no eyes and perfect pitch.",
-      "current": "scifi-essentials/Enemy_QuadShell",
+      "current": "custom/Rocky",
       "candidates": [
+        {
+          "id": "custom/Rocky",
+          "fit": "walk",
+          "label": "Rocky (yours, Eridian)"
+        },
         {
           "id": "scifi-essentials/Enemy_QuadShell",
           "fit": "walk",
