@@ -105,6 +105,18 @@ model-viewer { width: 100%; height: 100%; --poster-color: transparent; backgroun
 }
 .choose { justify-self: start; }
 
+.other { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.other input, .notes textarea {
+  flex: 1 1 260px; min-width: 0; background: var(--raise); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 12px; color: var(--ink); font: inherit;
+}
+.notes { display: grid; gap: 6px; }
+.notes label, .other-label { font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+.notes textarea { min-height: 64px; resize: vertical; }
+.wish { border: 1px dashed var(--pick); border-radius: 10px; padding: 10px 12px; color: var(--ink); font-size: 13px; }
+.wish b { color: var(--pick); font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; margin-right: 8px; }
+.assign { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.assign select { background: var(--raise); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit; }
 .question { display: flex; flex-wrap: wrap; gap: 8px; }
 .question label { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
 
@@ -167,6 +179,7 @@ try { picks = JSON.parse(localStorage.getItem("ceo-picks") || "{}"); } catch { p
 const savePicks = () => { try { localStorage.setItem("ceo-picks", JSON.stringify(picks)); } catch {} updateTally(); };
 
 function modelInfo(id, label) {
+  if (id.startsWith("describe:")) return { id, label: label || id.slice(9), thumb: null, glb: null, anims: [], pack: "describe" };
   if (id.startsWith("current:")) {
     const n = id.slice(8);
     return { id, label: label || n, thumb: n === "monolith" ? null : `thumbs/current/${n}.webp`, glb: null, anims: [], pack: "current" };
@@ -212,28 +225,66 @@ function view(info, pickedFor) {
       onclick: (e) => { viewer.setAttribute("animation-name", a); viewer.play?.(); bar.querySelectorAll(".clip").forEach((b) => b.setAttribute("aria-pressed", String(b === e.currentTarget))); } }))) : null;
   const choose = pickedFor ? h("button", { class: "btn choose", type: "button", text: picks[pickedFor] === info.id ? "Picked for " + nameOf(pickedFor) : "Pick for " + nameOf(pickedFor),
     onclick: () => { picks[pickedFor] = info.id; savePicks(); toast(`${info.label} picked for ${nameOf(pickedFor)}`); render(); view(info, pickedFor); } }) : null;
+  const assign = !pickedFor && !info.id.startsWith("current:") ? h("div", { class: "assign" },
+    h("label", { for: "assign-to", class: "other-label", text: "Use for" }),
+    h("select", { id: "assign-to" }, cast.characters.map((c) => h("option", { value: c.id, text: c.name }))),
+    h("button", { class: "btn", type: "button", text: "Pick", onclick: () => { const cid = $("#assign-to").value; picks[cid] = info.id; savePicks(); toast(`${info.label} picked for ${nameOf(cid)}`); } }),
+  ) : null;
   bar.replaceChildren(
     h("h3", { text: info.label }),
     h("div", { class: "meta", text: [info.id.startsWith("current:") ? "already in the app" : info.id, info.tris ? `${info.tris.toLocaleString()} triangles` : null, info.anims.length ? `${info.anims.length} animations` : null].filter(Boolean).join(" · ") }),
-    clips, choose,
+    ...[clips, choose, assign].filter(Boolean),
   );
   bar.hidden = false;
   document.querySelectorAll(".tile").forEach((t) => t.classList.remove("viewing"));
 }
 const nameOf = (cid) => cast.characters.find((c) => c.id === cid)?.name.replace(/ \(pet\)/, "") ?? cid;
 
+/** A typed choice: a library id, a model's name, or else a description of what you'd like. */
+function resolveChoice(text) {
+  const v = text.trim();
+  if (!v) return null;
+  if (byId.has(v)) return v;
+  const lower = v.toLowerCase();
+  const hit = catalog.find((m) => prettify(m.id).toLowerCase() === lower || m.id.toLowerCase() === lower);
+  return hit ? hit.pack + "/" + hit.id : "describe:" + v;
+}
+
+let only = "all";
 function renderCast() {
   const list = $("#list");
+  const chars = only === "all" ? cast.characters : cast.characters.filter((c) => c.id === only);
   list.replaceChildren(
-    h("p", { class: "about", text: "For each character, tap a model to see it in 3D, then press “Pick”. Your picks stay in this browser. When you're done, press “Copy my picks” and paste them to Claude." }),
-    ...cast.characters.map((c) => h("article", { class: "card", id: `c-${c.id}` },
+    h("p", { class: "about", text: "For each character, tap a model to see it in 3D, then press “Pick”. Not on the list? Search the whole library or describe what you want under the tiles, and leave notes on anything you'd change. Everything stays in this browser; when you're done, press “Copy my picks” and paste it to Claude." }),
+    h("div", { class: "toolbar", role: "group", "aria-label": "Characters" },
+      [{ id: "all", name: "Everyone" }, ...cast.characters].map((c) => h("button", { class: "chip", type: "button", "aria-pressed": String(only === c.id), text: c.name.replace(" (pet)", "") + (c.id !== "all" && (picks[c.id] || picks["note:" + c.id]) ? " ✓" : ""), onclick: () => { only = c.id; renderCast(); window.scrollTo(0, 0); } }))),
+    ...chars.map((c) => h("article", { class: "card", id: `c-${c.id}` },
       h("div", { class: "card-head" }, h("h2", { text: c.name }), h("span", { class: "where", text: [c.room, c.house && `House ${c.house}`, c.role].filter(Boolean).join(" · ") })),
       h("div", { class: "traits", text: c.traits }),
       h("p", { class: "about", text: c.about }),
       c.costume ? h("p", { class: "costume" }, h("b", { text: "Costume: " }), c.costume) : null,
-      h("div", { class: "tiles" }, c.candidates.map((k) => tile(modelInfo(k.id, k.label), { fit: k.fit, current: k.id === c.current, pickedFor: c.id }))),
+      h("div", { class: "tiles" },
+        c.candidates.map((k) => tile(modelInfo(k.id, k.label), { fit: k.fit, current: k.id === c.current, pickedFor: c.id })),
+        picks[c.id] && !picks[c.id].startsWith("describe:") && !c.candidates.some((k) => k.id === picks[c.id]) ? tile(modelInfo(picks[c.id]), { pickedFor: c.id }) : null,
+      ),
+      picks[c.id]?.startsWith("describe:") ? h("div", { class: "wish" }, h("b", { text: "Your pick" }), picks[c.id].slice(9)) : null,
+      h("div", { class: "other" },
+        h("label", { class: "other-label", for: `other-${c.id}`, text: "Something else" }),
+        h("input", { id: `other-${c.id}`, list: "all-models", type: "search", placeholder: "Any model in the library, or describe what you want", value: picks[c.id]?.startsWith("describe:") ? picks[c.id].slice(9) : "" }),
+        h("button", { class: "btn", type: "button", text: "Use this", onclick: () => {
+          const choice = resolveChoice($(`#other-${c.id}`).value);
+          if (!choice) return;
+          picks[c.id] = choice; savePicks(); renderCast();
+          if (!choice.startsWith("describe:")) view(modelInfo(choice), c.id);
+          toast(choice.startsWith("describe:") ? `Noted for ${nameOf(c.id)}` : `${modelInfo(choice).label} picked for ${nameOf(c.id)}`);
+        } }),
+      ),
+      h("div", { class: "notes" },
+        h("label", { for: `note-${c.id}`, text: "Notes (personality, name, look, anything)" }),
+        h("textarea", { id: `note-${c.id}`, placeholder: `e.g. make ${nameOf(c.id)} grumpier, or swap their role`, oninput: (e) => { picks["note:" + c.id] = e.target.value; savePicks(); } }, picks["note:" + c.id] || ""),
+      ),
     )),
-    ...cast.questions.map((q) => h("article", { class: "card" },
+    ...(only === "all" ? cast.questions : []).map((q) => h("article", { class: "card" },
       h("div", { class: "card-head" }, h("h2", { text: "One question" })),
       h("p", { class: "about", text: q.text }),
       h("div", { class: "question", role: "radiogroup" }, q.options.map((o, i) => h("label", {},
@@ -265,7 +316,12 @@ function updateTally() {
 }
 function summary() {
   const lines = ["My C.E.O. cast picks:"];
-  for (const c of cast.characters) lines.push(`- ${c.name}: ${picks[c.id] ? modelInfo(picks[c.id]).label + " (" + picks[c.id] + ")" : "no pick (keep current)"}`);
+  for (const c of cast.characters) {
+    const p = picks[c.id];
+    const pick = !p ? "no pick (keep current)" : p.startsWith("describe:") ? `something else: "${p.slice(9)}"` : `${modelInfo(p).label} (${p})`;
+    lines.push(`- ${c.name}: ${pick}`);
+    if (picks["note:" + c.id]?.trim()) lines.push(`    notes: ${picks["note:" + c.id].trim().replace(/\n+/g, " / ")}`);
+  }
   for (const q of cast.questions) lines.push(`- ${q.text.split(" (")[0]}: ${picks["q:" + q.id] || "no answer"}`);
   return lines.join("\n");
 }
@@ -289,7 +345,9 @@ for (const [id, name] of [["tab-cast", "cast"], ["tab-library", "library"]]) $("
 Promise.all([fetch("catalog.json").then((r) => r.json()), fetch("cast.json").then((r) => r.json())]).then(([cat, c]) => {
   catalog = cat.models; byId = new Map(catalog.map((m) => [m.pack + "/" + m.id, m]));
   Object.entries(cat.packs).forEach(([k, v]) => (PACK_NAMES[k] = v.name));
-  cast = c; render(); updateTally();
+  cast = c;
+  document.body.append(h("datalist", { id: "all-models" }, catalog.map((m) => h("option", { value: m.pack + "/" + m.id, label: prettify(m.id) + " · " + (PACK_NAMES[m.pack] || m.pack) }))));
+  render(); updateTally();
 }).catch(() => {
   $("#list").replaceChildren(h("p", { class: "about", text: "Couldn't load catalog.json. Open this page through GitHub Pages (or any web server); it can't load files when opened straight from disk." }));
 });
