@@ -1,5 +1,5 @@
 // Generated from C.E.O. apps/world/src/agents/bodies/rockyPose.ts by scripts/sync-lab.mjs. Don't edit here.
-import { Vector3 } from "three";
+import { Quaternion, Vector3 } from "three";
 import { chainLengths, solveChain } from "./ik.js";
 /**
  * How an Eridian moves (shared by the world, offline previews and the motion lab). Five identical limbs in radial
@@ -28,20 +28,25 @@ export const ROCKY_GAIT = {
         breathe: true,
     },
     /** How far a foot travels per step. */
-    stride: 0.56,
-    /** Share of a cycle a foot spends on the floor. */
-    duty: 0.5,
+    stride: 0.5,
+    /** Share of a cycle a foot spends on the floor: more than half, so the body glides on most of its feet. */
+    duty: 0.62,
     /** Peak height of a step. */
-    lift: 0.14,
-    /** Shortest and longest a step may take. */
-    minStep: 0.12,
-    maxStep: 0.32,
+    lift: 0.12,
+    /** Shortest and longest a step may take: quick and light. */
+    minStep: 0.1,
+    maxStep: 0.22,
+    /** Spider stance: feet planted this much further out than they hang at rest, and the body slung this low
+     * between them, so the knees arch up above the carapace. `crouch` while scuttling, `stance` otherwise. */
+    reach: 0.24,
+    crouch: 0.26,
+    stance: 0.14,
     /** When each leg steps in the scuttle, as a fraction of the cycle: a wave round the body, off the beat. */
     scuttleOrder: [0, 0.38, 0.81, 0.17, 0.59],
-    /** Body bob while walking (twice a cycle), lean into travel per unit speed, and the most it leans. */
-    bob: 0.05,
-    lean: 0.05,
-    maxLean: 0.16,
+    /** Body bob while walking (twice a cycle; small, so it glides), lean into travel per unit speed, and the most it leans. */
+    bob: 0.015,
+    lean: 0.03,
+    maxLean: 0.1,
     /** Feet planted out from the body by this much more when settling to sleep, and how low it settles. */
     splay: 0.3,
     settle: 0.16,
@@ -92,13 +97,15 @@ export function rigRocky(ground, legs) {
         legs: legs.map((bones, i) => {
             const home = tips[i].clone();
             const out = new Vector3(home.x, 0, home.z).normalize();
-            return { bones, lengths: chainLengths(bones), home, out, front: front.has(i), side: home.x >= 0 ? 1 : -1, foot: ground.localToWorld(home.clone()), swing: null, stepped: -1 };
+            const footRest = ground.getWorldQuaternion(new Quaternion()).invert().multiply(bones[bones.length - 1].getWorldQuaternion(new Quaternion()));
+            return { bones, lengths: chainLengths(bones), home, out, front: front.has(i), side: home.x >= 0 ? 1 : -1, footRest, foot: ground.localToWorld(home.clone()), swing: null, stepped: -1 };
         }),
         clock: 0,
         last: null,
         velocity: new Vector3(),
         arms: 0.6,
         sink: 0,
+        crouch: 0,
         bounce: 0,
         bump: 0,
         lean: 0,
@@ -113,6 +120,8 @@ const target = new Vector3();
 const pole = new Vector3();
 const hip = new Vector3();
 const arm = new Vector3();
+const qa = new Quaternion();
+const qb = new Quaternion();
 /**
  * One frame. `ground` turns with the agent and sits on the floor; `body` is the carapace inside it, which this
  * bobs and leans. Returns where the front pair are holding things (ground frame), for carrying.
@@ -131,6 +140,7 @@ export function poseRocky(ground, body, rig, mode, t, dt, phase) {
     const scuttle = mode === "walking";
     rig.arms = smooth(rig.arms, scuttle || mode === "napping" || !G.layers.arms ? 0 : 1, 0.1);
     rig.sink = smooth(rig.sink, mode === "napping" ? 1 : mode === "slumped" ? 0.45 : 0, 0.05);
+    rig.crouch = smooth(rig.crouch, scuttle ? G.crouch : G.stance, 0.06);
     rig.bounce = smooth(rig.bounce, mode === "celebrating" ? 1 : 0, 0.1);
     rig.bump = smooth(rig.bump, mode === "waiting" ? 1 : 0, 0.07);
     const armsUp = rig.arms > 0.5;
@@ -141,7 +151,7 @@ export function poseRocky(ground, body, rig, mode, t, dt, phase) {
     const stepTime = Math.min(G.maxStep, Math.max(G.minStep, ((1 - G.duty) * cycle) / Math.max(speed, 0.01)));
     // Body: bob twice a cycle while walking, lean into travel, bounce to celebrate, settle to sleep.
     const walkBob = moving && G.layers.bob ? Math.abs(Math.sin(rig.clock * Math.PI * 2)) * G.bob : 0;
-    body.position.y = walkBob + rig.bounce * Math.abs(Math.sin(t * 9)) * 0.12 - rig.sink * G.settle;
+    body.position.y = walkBob + rig.bounce * Math.abs(Math.sin(t * 9)) * 0.12 - rig.sink * G.settle - rig.crouch;
     rig.lean = smooth(rig.lean, G.layers.lean ? Math.min(G.maxLean, speed * G.lean) : 0, 0.1);
     body.rotation.x = rig.lean + (G.layers.breathe ? Math.sin(t * 1.3 + phase) * 0.012 : 0);
     body.rotation.z = moving && G.layers.lean ? Math.sin(rig.clock * Math.PI * 2 + 0.7) * 0.025 : 0;
@@ -149,8 +159,8 @@ export function poseRocky(ground, body, rig, mode, t, dt, phase) {
     const feet = rig.legs.filter((l) => !(armsUp && l.front));
     const swinging = rig.legs.some((l) => l.swing);
     feet.forEach((leg, k) => {
-        // Where this foot belongs now: under its hip, splayed out if settling.
-        homeW.copy(leg.home).addScaledVector(leg.out, G.splay * rig.sink);
+        // Where this foot belongs now: out wide of its hip, wider still if settling.
+        homeW.copy(leg.home).addScaledVector(leg.out, G.reach + G.splay * rig.sink);
         ground.localToWorld(homeW);
         if (leg.swing) {
             const s = leg.swing;
@@ -201,6 +211,8 @@ export function poseRocky(ground, body, rig, mode, t, dt, phase) {
                 armPose("celebrating", side, arm).add(v.set(Math.sin(t * 7 + side) * 0.12, 0, 0));
             else
                 armPose("idle", side, arm).add(v.set(0, Math.sin(t * 0.9 + side * 2 + phase) * 0.05, Math.sin(t * 0.7 + side) * 0.04));
+            // Hands keep their height while the body crouches between the feet.
+            arm.y += rig.crouch;
             body.localToWorld(arm);
             target.lerp(arm, rig.arms);
             // Elbow up and a little out.
@@ -213,6 +225,15 @@ export function poseRocky(ground, body, rig, mode, t, dt, phase) {
             pole.add(v);
         }
         solveChain(leg.bones, leg.lengths, target, pole);
+        // The foot points at the floor as it did at rest (arms keep the curl the bend gives them).
+        const footBlend = leg.front ? 1 - rig.arms : 1;
+        if (footBlend > 0.01) {
+            const foot = leg.bones[leg.bones.length - 1];
+            ground.getWorldQuaternion(qa).multiply(leg.footRest);
+            foot.parent.getWorldQuaternion(qb).invert();
+            foot.quaternion.slerp(qb.multiply(qa), footBlend);
+            foot.updateWorldMatrix(false, true);
+        }
         if (leg.front && mode === "carrying" && rig.arms > 0.5) {
             const tip = leg.bones[leg.bones.length - 1].getWorldPosition(new Vector3());
             held = held ? held.add(tip).multiplyScalar(0.5) : tip;
