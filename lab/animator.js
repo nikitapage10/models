@@ -1,7 +1,9 @@
 import * as THREE from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
+import { HANAR_MOTION, chainsOf, frontPair, hanarState, poseHanar } from "./motion/hanarPose.js";
 import { chainLengths, solveChain } from "./motion/ik.js";
+import { ROCKY_GAIT, legsOf, poseRocky, rigRocky } from "./motion/rockyPose.js";
 import { $, clone, copyText, download, h, paramsUI, store, toast } from "./ui.js";
 
 /**
@@ -25,6 +27,77 @@ const LAYER_TYPES = {
   ik: { label: "IK handle", doc: "Drag a target and the limb follows: pick the end bone (hand, foot, tentacle tip).", params: () => ({ bones: 3, poleUp: 0.5 }) },
 };
 const AXES = ["x", "y", "z"];
+
+const ROCKY_APP = [
+  ["walking", "Scuttle (all five)"],
+  ["carrying", "Tripod walk, carrying"],
+  ["idle", "Standing (tripod, arms easy)"],
+  ["typing", "Typing"],
+  ["working", "Working"],
+  ["celebrating", "Cheer"],
+  ["waiting", "Fist my bump"],
+  ["napping", "Nap"],
+];
+const BLASTO_APP = [
+  ["idle", "Drifting"],
+  ["walking", "Gliding"],
+  ["carrying", "Carrying"],
+  ["typing", "Typing"],
+  ["working", "Working"],
+  ["celebrating", "Cheer"],
+  ["waiting", "Hello"],
+  ["napping", "Nap"],
+];
+const id6 = () => Math.random().toString(36).slice(2, 8);
+
+/** Starters that fit any rig, built from its limbs. */
+const GENERIC = [
+  {
+    id: "breathe",
+    label: "Breathe (gentle idle)",
+    build(w) {
+      const root = w.bones[0]?.name;
+      if (!root) return;
+      w.duration = 4;
+      w.layers.push({ id: id6(), type: "bob", bone: root, axis: "y", on: true, p: { height: 0.012, speed: 0.25, phase: 0 } });
+      w.limbs().forEach((chain, k) => w.layers.push({ id: id6(), type: "swing", bone: chain[0].name, axis: "x", on: true, p: { size: 2.5, speed: 0.25, phase: k * 0.6 } }));
+    },
+  },
+  {
+    id: "ripple",
+    label: "Ripple walk (every limb steps in turn)",
+    build(w) {
+      const limbs = w.limbs();
+      w.duration = 1;
+      limbs.forEach((chain, k) => {
+        const phase = (k / Math.max(1, limbs.length)) * Math.PI * 2;
+        w.layers.push({ id: id6(), type: "swing", bone: chain[0].name, axis: "x", on: true, p: { size: 18, speed: 1, phase } });
+        if (chain[1]) w.layers.push({ id: id6(), type: "swing", bone: chain[1].name, axis: "x", on: true, p: { size: 14, speed: 1, phase: phase + Math.PI / 2 } });
+      });
+    },
+  },
+  {
+    id: "wiggle",
+    label: "Wiggle (every limb undulates)",
+    build(w) {
+      const limbs = w.limbs();
+      w.duration = 3;
+      limbs.forEach((chain, k) => w.layers.push({ id: id6(), type: "wave", bone: chain[0].name, axis: "x", on: true, p: { size: 10, speed: 0.4, lag: 0.7, grow: 1, phase: (k / Math.max(1, limbs.length)) * Math.PI * 2, length: chain.length } }));
+    },
+  },
+  {
+    id: "hello",
+    label: "Hello (the highest limb waves)",
+    build(w) {
+      const limbs = w.limbs();
+      if (!limbs.length) return;
+      const top = [...limbs].sort((a, b) => b.at(-1).getWorldPosition(new THREE.Vector3()).y - a.at(-1).getWorldPosition(new THREE.Vector3()).y)[0];
+      w.duration = 2;
+      w.layers.push({ id: id6(), type: "swing", bone: top[0].name, axis: "z", on: true, p: { size: 25, speed: 1, phase: 0 } });
+      if (top[1]) w.layers.push({ id: id6(), type: "wave", bone: top[1].name, axis: "z", on: true, p: { size: 15, speed: 1, lag: 0.6, grow: 1, phase: 0.5, length: top.length - 1 } });
+    },
+  },
+];
 const AXIS = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
 
 const q1 = new THREE.Quaternion();
@@ -292,6 +365,158 @@ export class AnimatorWorkspace {
     L.target = target;
   }
 
+  // ── Templates and limb tools ────────────────────────────────────────────────────────────────
+
+  /**
+   * The model's limbs: chains of bones that branch off a common bone (legs, arms, tentacles, a neck), fingers left
+   * out, sorted round the body (by the angle of their tips) so neighbours are next to each other.
+   */
+  limbs() {
+    const out = [];
+    for (const b of this.bones) {
+      const kids = b.children.filter((c) => c.isBone);
+      if (kids.length < 2) continue;
+      for (const k of kids) {
+        if (/thumb|index|middle|ring|pinky|finger/i.test(k.name)) continue;
+        const chain = [];
+        let c = k;
+        while (c && c.isBone) {
+          chain.push(c);
+          const next = c.children.filter((x) => x.isBone && !/thumb|index|middle|ring|pinky|finger/i.test(x.name));
+          c = next.length === 1 ? next[0] : undefined;
+        }
+        if (chain.length >= 2) out.push(chain);
+      }
+    }
+    this.model.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(this.model.matrixWorld).invert();
+    const angle = (chain) => {
+      const p = chain.at(-1).getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
+      return Math.atan2(p.x, p.z);
+    };
+    return out.sort((a, c) => angle(a) - angle(c));
+  }
+
+  /** The limb a bone belongs to, and its place in it. */
+  limbOf(name) {
+    const limbs = this.limbs();
+    for (const [li, chain] of limbs.entries()) {
+      const i = chain.findIndex((b) => b.name === name);
+      if (i >= 0) return { limbs, li, chain, i };
+    }
+    return null;
+  }
+
+  /**
+   * Copy the keys of the selected bone's limb onto every other limb, bone for bone, shifted in time: a wave round
+   * the body, alternating, or all at once. Rotations carry over relative to each bone's rest pose, so limbs that
+   * point different ways still move the same way.
+   */
+  spread(mode) {
+    const found = this.selected && this.limbOf(this.selected);
+    if (!found) return toast("Pick a bone in a limb that has keys first.");
+    const { limbs, li, chain } = found;
+    const src = chain.map((b) => this.keys[b.name] ?? []);
+    if (!src.some((k) => k.length)) return toast("That limb has no keys yet: key a step on it first.");
+    const n = limbs.length;
+    const qa = new THREE.Quaternion();
+    limbs.forEach((target, k) => {
+      if (k === li) return;
+      const rel = (k - li + n) % n;
+      const shift = mode === "same" ? 0 : mode === "alternate" ? (rel % 2) * 0.5 : rel / n;
+      target.forEach((b, i) => {
+        const from = chain[Math.min(i, chain.length - 1)];
+        const ks = src[Math.min(i, src.length - 1)];
+        if (!ks?.length) return;
+        const rs = this.rest.get(from.name).q;
+        const rt = this.rest.get(b.name).q;
+        this.keys[b.name] = ks
+          .map((key) => {
+            const delta = rs.clone().invert().multiply(qa.fromArray(key.q));
+            return { t: +(((key.t + shift * this.duration) % this.duration) + 0).toFixed(3), q: rt.clone().multiply(delta).toArray() };
+          })
+          .sort((a, c) => a.t - c.t);
+      });
+    });
+    this.save();
+    this.render();
+    toast(`Copied to ${n - 1} limbs.`);
+  }
+
+  /** Templates for this model: the app's own motions where it has them, and starters that fit any rig. */
+  templates() {
+    const app = this.source === "custom/Rocky" ? ROCKY_APP : this.source === "custom/Blasto" ? BLASTO_APP : [];
+    return [...app.map(([mode, label]) => ({ id: `app:${mode}`, label: `From the app: ${label}` })), ...GENERIC.map((g) => ({ id: g.id, label: g.label }))];
+  }
+
+  applyTemplate(id) {
+    this.keys = {};
+    this.layers.forEach((L) => L.target && this.lab.scene.remove(L.target));
+    this.layers = [];
+    this.selected = null;
+    this.lab.gizmo.detach();
+    if (id.startsWith("app:")) this.bakeFromApp(id.slice(4));
+    else GENERIC.find((g) => g.id === id)?.build(this);
+    this.save();
+    this.render();
+    this.lab.time = 0;
+    this.lab.setPaused(false);
+  }
+
+  /**
+   * Run the app's motion for Rocky or Blasto on a private copy of the model and key what the bones do, a dozen
+   * times a second, so it can be edited. Travel happens on the spot, like a treadmill.
+   */
+  bakeFromApp(mode) {
+    const rocky = this.source === "custom/Rocky";
+    const copy = cloneSkinned(this.gltf.scene);
+    const ground = new THREE.Group();
+    const body = new THREE.Group();
+    ground.add(body);
+    body.add(copy);
+    const box = new THREE.Box3().setFromObject(copy, true);
+    copy.scale.setScalar((rocky ? 1 : 2.1) / (box.max.y - box.min.y));
+    if (!rocky) copy.rotation.y = Math.PI;
+    ground.updateWorldMatrix(true, true);
+    const moving = mode === "walking" || mode === "carrying";
+    const speed = mode === "walking" ? 1.4 : 0.9;
+    const step = 1 / 60;
+    let t = 0;
+    let advance;
+    if (rocky) {
+      const rig = rigRocky(ground, legsOf(copy));
+      advance = () => poseRocky(ground, body, rig, mode, t, step, 0);
+      this.duration = moving ? +((ROCKY_GAIT.stride / ROCKY_GAIT.duty / speed) * 2).toFixed(2) : 2;
+    } else {
+      const chains = chainsOf(copy);
+      const front = frontPair(body, chains);
+      const st = hanarState();
+      advance = () => poseHanar(body, chains, front, st, mode, t, 0);
+      this.duration = 3;
+    }
+    const bones = [];
+    copy.traverse((o) => o.isBone && this.byName.has(o.name) && bones.push(o));
+    const warm = 2;
+    const keyEvery = 1 / 12;
+    let nextKey = warm;
+    while (t < warm + this.duration + 1e-6) {
+      if (moving) ground.position.z += speed * step;
+      ground.updateWorldMatrix(true, true);
+      advance();
+      if (t >= nextKey - 1e-6) {
+        const kt = +(t - warm).toFixed(3);
+        for (const b of bones) (this.keys[b.name] ??= []).push({ t: kt, q: b.quaternion.toArray() });
+        nextKey += keyEvery;
+      }
+      t += step;
+    }
+    // What lived on the body rather than the bones (the bob and float) comes back as a layer.
+    const root = this.bones[0]?.name;
+    if (root) this.layers.push({ id: "bob", type: "bob", bone: root, axis: "y", on: true, p: { height: rocky ? (moving ? 0.03 : 0.006) : HANAR_MOTION.float.bob, speed: rocky ? (moving ? speed / (ROCKY_GAIT.stride / ROCKY_GAIT.duty) * 2 : 0.2) : HANAR_MOTION.float.bobSpeed / (Math.PI * 2), phase: 0 } });
+    this.clipName = `${rocky ? "Rocky" : "Blasto"}_${mode}`;
+    toast(`Loaded the app's ${mode} as keys. Edit any bone; the rest keeps moving.`);
+  }
+
   // ── Export ───────────────────────────────────────────────────────────────────────────────────
 
   /** Sample the whole timeline into a clip: every bone that anything moves. */
@@ -364,6 +589,31 @@ export class AnimatorWorkspace {
       h(
         "section",
         {},
+        h("h3", { text: "Start from a template" }),
+        h("select", { id: "template", "aria-label": "Template" }, this.templates().map((tp) => h("option", { value: tp.id, text: tp.label }))),
+        h(
+          "div",
+          { class: "row" },
+          h("button", {
+            class: "btn primary",
+            type: "button",
+            text: "Load template",
+            onclick: (e) => {
+              const has = Object.keys(this.keys).length || this.layers.length;
+              if (has && e.currentTarget.dataset.armed !== "1") {
+                e.currentTarget.dataset.armed = "1";
+                e.currentTarget.textContent = "Replace current work?";
+                return;
+              }
+              this.applyTemplate($("#template").value);
+            },
+          }),
+        ),
+        h("p", { class: "note", text: `${this.limbs().length} limbs found. Templates give you something already moving: change the bones you want, keep the rest.` }),
+      ),
+      h(
+        "section",
+        {},
         h("h3", { text: "Clip" }),
         h("input", { type: "text", id: "clip-name", value: this.clipName, "aria-label": "Clip name", onchange: (e) => ((this.clipName = e.target.value), this.save()) }),
         h(
@@ -396,6 +646,20 @@ export class AnimatorWorkspace {
               h("button", { class: "btn small", type: "button", text: "Clear its keys", onclick: () => (delete this.keys[sel], this.save(), this.render()) }),
             )
           : h("p", { class: "note", text: "Pick a bone to rotate it, key it, or put a motion layer on it." }),
+        sel && this.limbOf(sel)
+          ? h(
+              "div",
+              { class: "group" },
+              h("span", { class: "note", text: `Limb ${this.limbOf(sel).li + 1} of ${this.limbOf(sel).limbs.length}, bone ${this.limbOf(sel).i + 1}. Key a step on this limb, then copy it to the others:` }),
+              h(
+                "div",
+                { class: "row" },
+                h("button", { class: "btn small", type: "button", text: "Wave round the body", title: "Each limb a little later than its neighbour (Rocky's scuttle)", onclick: () => this.spread("wave") }),
+                h("button", { class: "btn small", type: "button", text: "Alternate", title: "Every other limb half a cycle apart", onclick: () => this.spread("alternate") }),
+                h("button", { class: "btn small", type: "button", text: "All together", onclick: () => this.spread("same") }),
+              ),
+            )
+          : null,
         this.selectedKey
           ? h(
               "div",
