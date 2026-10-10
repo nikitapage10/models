@@ -228,13 +228,13 @@
       "role": "Quant",
       "traits": "smug · competitive · flirty",
       "about": "Prices everything, including feelings. Challenges everyone to a duel at least once a shift. 63% sure Hedge likes them back.",
-      "costume": "Gestral (Clair Obscur: Expedition 33).",
+      "costume": "Noco, a Gestral (Clair Obscur: Expedition 33).",
       "current": "custom/Gestral",
       "candidates": [
         {
           "id": "custom/Gestral",
           "fit": "walk",
-          "label": "Gestral (yours, stylized)"
+          "label": "Noco (yours, stylized Gestral)"
         },
         {
           "id": "custom/Gestral_Realistic",
