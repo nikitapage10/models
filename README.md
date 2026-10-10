@@ -36,7 +36,7 @@ Total size is about 240 MB.
 | `nature` | 68 trees, bushes, flowers, rocks, paths | static |
 | `medieval` | 176 village kit pieces | static |
 | `downtown` | 153 city kit pieces and 3 whole buildings | static |
-| `custom` | Characters made for C.E.O. (Meshy AI): the Gestral. Originals in `custom/_source/` | Mixamo skeleton |
+| `custom` | Characters made for C.E.O. (Meshy AI): the Gestral and Blasto. Originals in `custom/_source/` | Mixamo skeleton |
 
 ## Rebuilding
 

@@ -381,9 +381,14 @@
       "role": "Correspondence",
       "traits": "romantic · pedantic · nostalgic",
       "about": "Reads every love letter three times and announces how they feel about each one. Married to Dialtone over pneumatic tube. Catchphrase: \"Signed, sealed, and drafted for approval.\"",
-      "costume": "Emotive Pachyderm Envoy (the elcor, Mass Effect): a large, grey, slow diplomat who states their feelings first.",
-      "current": "monsters/Big/Yeti",
+      "costume": "Blasto (Mass Effect): a hanar, a floating jellyfish who speaks of itself as \"this one\".",
+      "current": "custom/Blasto",
       "candidates": [
+        {
+          "id": "custom/Blasto",
+          "fit": "floats",
+          "label": "Blasto (yours, hanar)"
+        },
         {
           "id": "monsters/Big/Yeti",
           "fit": "full",
