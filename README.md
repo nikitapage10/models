@@ -30,6 +30,7 @@ Total size is about 240 MB.
 | `nature` | 68 trees, bushes, flowers, rocks, paths | static |
 | `medieval` | 176 village kit pieces | static |
 | `downtown` | 153 city kit pieces and 3 whole buildings | static |
+| `custom` | Characters made for C.E.O. (Meshy AI): the Gestral. Originals in `custom/_source/` | Mixamo skeleton |
 
 ## Rebuilding
 
@@ -43,4 +44,4 @@ These scripts need `@gltf-transform/{core,functions,extensions}`, `meshoptimizer
 
 ## License
 
-All models are by [Quaternius](https://quaternius.com) and released under CC0 1.0 (public domain).
+Everything outside `custom/` is by [Quaternius](https://quaternius.com) and released under CC0 1.0 (public domain). `custom/` holds models made for this project.
